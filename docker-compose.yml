@@ -1,0 +1,12 @@
+---
+version: "3.9"
+services:
+  code-server:
+    image: vscode-xp-workspace-deb10-arm64:0.7.2
+    container_name: vscode-xp-workspace-arm-deb10
+    ports:
+      - "3505:8080"
+    volumes:
+      - ./data:/home/coder/data
+      - ./.config:/home/coder/.config
+      - ./local:/home/coder/.local/share/code-server
