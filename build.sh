@@ -1,0 +1,1 @@
+docker build -t vscode-xp-workspace-deb10-arm64:0.8 .

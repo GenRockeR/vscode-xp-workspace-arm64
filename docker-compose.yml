@@ -2,8 +2,11 @@
 version: "3.9"
 services:
   code-server:
-    image: vscode-xp-workspace-deb10-arm64:0.7.2
+    image: vscode-xp-workspace-deb10-arm64:0.8
     container_name: vscode-xp-workspace-arm-deb10
+    environment:
+      - LANG=C.UTF-8
+      - LC_ALL=C.UTF-8
     ports:
       - "3505:8080"
     volumes:
