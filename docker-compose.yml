@@ -1,5 +1,4 @@
 ---
-version: "3.9"
 services:
   code-server:
     image: vscode-xp-workspace-deb10-arm64:0.8
