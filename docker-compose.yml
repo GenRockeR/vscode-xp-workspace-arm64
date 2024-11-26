@@ -1,7 +1,7 @@
 ---
 services:
   code-server:
-    image: vscode-xp-workspace-deb10-arm64:0.8
+    image: vscode-xp-workspace-deb10-arm64:0.9
     container_name: vscode-xp-workspace-arm-deb10
     environment:
       - LANG=C.UTF-8

@@ -2,21 +2,29 @@
 # Author: Gennadiy Mukhamedzyanov (@GenRockeR)
 # License: MIT
 
-FROM --platform=linux/arm64 debian:10-slim
+FROM --platform=${BUILDPLATFORM} debian:10-slim
 
 LABEL maintainer="Gennadiy Mukhamedzyanov (@GenRockeR)"
 LABEL description="Dockerfile for XP web workspace for MacOS ARM devices"
 
 ARG NB_USER
-ENV NB_USER coder
-ENV HOME /home/${NB_USER}
-ENV PATH "$HOME/.local/bin:$PATH"
-ENV USER_SETTINGS $HOME/.local/share/code-server/User
-ENV DEBIAN_FRONTEND=noninteractive
+ENV NB_USER="coder"
+ENV HOME="/home/${NB_USER}"
+ENV PATH="$HOME/.local/bin:$PATH"
+ENV USER_SETTINGS="$HOME/.local/share/code-server/User"
+ENV DEBIAN_FRONTEND="noninteractive"
 
 COPY files/entrypoint.sh /usr/bin/entrypoint.sh
 
-RUN apt update && apt dist-upgrade -y && \
+RUN echo 'path-exclude /usr/share/doc/*' >/etc/dpkg/dpkg.cfg.d/docker-minimal && \
+    echo 'path-exclude /usr/share/man/*' >>/etc/dpkg/dpkg.cfg.d/docker-minimal && \
+    echo 'path-exclude /usr/share/groff/*' >>/etc/dpkg/dpkg.cfg.d/docker-minimal && \
+    echo 'path-exclude /usr/share/info/*' >>/etc/dpkg/dpkg.cfg.d/docker-minimal && \
+    echo 'path-exclude /usr/share/lintian/*' >>/etc/dpkg/dpkg.cfg.d/docker-minimal && \
+    echo 'path-exclude /usr/share/linda/*' >>/etc/dpkg/dpkg.cfg.d/docker-minimal && \
+    echo 'path-exclude /usr/share/locale/*' >>/etc/dpkg/dpkg.cfg.d/docker-minimal && \
+    echo 'path-include /usr/share/locale/en*' >>/etc/dpkg/dpkg.cfg.d/docker-minimal && \
+    apt update && apt dist-upgrade -y && \
     apt install -y \
         curl \
         python3 \
@@ -33,7 +41,8 @@ RUN apt update && apt dist-upgrade -y && \
         sudo \
         ca-certificates \
         apt-utils \
-        gnupg && \
+        gnupg \
+        jq && \
     dpkg --add-architecture amd64 && \
     wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
     dpkg -i packages-microsoft-prod.deb && \
@@ -48,11 +57,9 @@ RUN apt update && apt dist-upgrade -y && \
     pip3 install -U pip && \
     pip3 install ijson==2.3 && \
     apt install -y nodejs && \
-    npm install -g npm@10.9.0 && \
-    npm install -g yarn && \
-    npm install -g code-server --unsafe-perm && \
-    yarn global add node-gyp && \
-    yarn --cwd /usr/lib/node_modules/code-server/lib/vscode --production --frozen-lockfile --no-default-rc && \
+    npm install -g npm@10.9.1 && \
+    curl -fOL https://github.com/coder/code-server/releases/download/v4.95.3/code-server_4.95.3_arm64.deb && \
+    dpkg -i code-server_4.95.3_arm64.deb && \
     curl -SsL https://github.com/boxboat/fixuid/releases/download/v0.6.0/fixuid-0.6.0-linux-arm64.tar.gz | tar -C /usr/local/bin -xzf - && \
     chown root:root /usr/local/bin/fixuid && \
     chmod 4755 /usr/local/bin/fixuid && \
@@ -74,8 +81,6 @@ RUN sudo chown -R ${NB_USER}:${NB_USER} ${HOME} && \
     git clone https://github.com/Security-Experts-Community/open-xp-rules.git && \
     sudo chown -R ${NB_USER}:${NB_USER} ${HOME} && \
     mkdir -p ${USER_SETTINGS} && \
-    echo '{"xpConfig.kbtBaseDirectory":"${HOME}/xp-kbt","cSpell.language":"en,ru","cSpell.enableFiletypes":["xp"]}' \
-    | python3 -m json.tool > ${USER_SETTINGS}/settings.json && \
     mkdir -p ./open-xp-rules/.vscode && \
     mkdir /tmp/vscode-xp && \
     echo '{"xpConfig.outputDirectoryPath": "/tmp/vscode-xp"}' | python3 -m json.tool  >  \
@@ -83,6 +88,7 @@ RUN sudo chown -R ${NB_USER}:${NB_USER} ${HOME} && \
     code-server --install-extension SecurityExpertsCommunity.xp && \
     code-server --install-extension streetsidesoftware.code-spell-checker-russian && \
     code-server --install-extension MS-CEINTL.vscode-language-pack-ru && \
+    jq '. += {"xpConfig.kbtBaseDirectory":"/home/coder/xp-kbt","cSpell.language":"en,ru","cSpell.enableFiletypes":["xp"]}' ${USER_SETTINGS}/settings.json > ${USER_SETTINGS}/settings.json && \
     sudo apt clean && \
     sudo rm -rf /var/lib/apt/lists/*
 
